@@ -50,7 +50,7 @@ const onFileLoaded = (results: Papa.ParseResult<Row>) => {
 
 const fetchCSV = async () => {
   try {
-    const response = await fetch(`/${file.value}`);
+    const response = await fetch(`/ufabc-enrollment-filter/${file.value}`);
     const csv = await response.text();
     Papa.parse(csv, {
       header: true,
@@ -129,7 +129,6 @@ const downloadRA = () => {
 
   const blob = new Blob([csv], { type: "text/csv" });
   saveAs(blob, file.value);
-  raFiltered.value?.forEach((r) => console.log(r));
 };
 </script>
 
