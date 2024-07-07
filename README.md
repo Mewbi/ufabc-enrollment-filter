@@ -1,4 +1,4 @@
-# UFABC Enrollment Filter
+# 🏫 UFABC Enrollment Filter
 
 Webpage to filter UFABC enrollment. This project is separeted in two applications:
 
