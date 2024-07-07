@@ -17,8 +17,8 @@ Ensure you have the following installed:
 
 1. Clone the repository:
     ```sh
-    git clone https://github.com/yourusername/enrollment-filter.git
-    cd enrollment-filter
+    git clone https://github.com/Mewbi/ufabc-enrollment-filter.git
+    cd ufabc-enrollment-filter/enrollment-filter
     ```
 
 2. Install dependencies:
