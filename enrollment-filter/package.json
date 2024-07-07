@@ -1,0 +1,32 @@
+{
+  "name": "enrollment-filter",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@types/file-saver": "^2.0.7",
+    "@types/papaparse": "^5.3.14",
+    "@vue/runtime-core": "^3.4.31",
+    "file-saver": "^2.0.5",
+    "papaparse": "^5.4.1",
+    "vue": "^3.4.29",
+    "vue-good-table-next": "^0.2.1",
+    "vue-multiselect": "^3.0.0-beta.3",
+    "vue-router": "^4.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "@vitejs/plugin-vue": "^5.0.5",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.39",
+    "tailwindcss": "^3.4.4",
+    "typescript": "^5.2.2",
+    "vite": "^5.3.1",
+    "vue-tsc": "^2.0.21"
+  }
+}
