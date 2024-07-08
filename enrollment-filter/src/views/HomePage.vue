@@ -46,11 +46,14 @@ const columns = ref<Column[]>([
 
 const onFileLoaded = (results: Papa.ParseResult<Row>) => {
   rows.value = results.data;
+  isDisabled.value = false;
 };
 
 const fetchCSV = async () => {
+  isDisabled.value = true;
   try {
-    const response = await fetch(`/ufabc-enrollment-filter/${file.value}`);
+    const baseURL = `/ufabc-enrollment-filter/`;
+    const response = await fetch(`${baseURL}${file.value}`);
     const csv = await response.text();
     Papa.parse(csv, {
       header: true,
@@ -70,8 +73,14 @@ onMounted(() => {
 
 const fileOptions = ref<Map<string, string>>(
   new Map<string, string>([
-    ["Matrículas Deferidas Pós Reajuste 2024.2", "reajuste_2024_2_matriculas_deferidas.csv"],
-    ["Matrículas Deferidas Pós Ajuste 2024.2", "ajuste_2024_2_matriculas_deferidas.csv"],
+    [
+      "Matrículas Deferidas Pós Reajuste 2024.2",
+      "reajuste_2024_2_matriculas_deferidas.csv",
+    ],
+    [
+      "Matrículas Deferidas Pós Ajuste 2024.2",
+      "ajuste_2024_2_matriculas_deferidas.csv",
+    ],
   ])
 );
 
@@ -130,6 +139,8 @@ const downloadRA = () => {
   const blob = new Blob([csv], { type: "text/csv" });
   saveAs(blob, file.value);
 };
+
+const isDisabled = ref<boolean>(false);
 </script>
 
 <template>
@@ -151,7 +162,7 @@ const downloadRA = () => {
         </div>
 
         <div class="flex items-center ml-auto">
-          <label class="ps-4 p-2.5 h-10 rounded-s-md text-sm bg-gray-200">
+          <label class="ps-4 p-2.5 h-10 rounded-s-md font-bold text-sm bg-gray-200">
             Arquivo
           </label>
           <select
@@ -168,6 +179,8 @@ const downloadRA = () => {
           </select>
           <button
             @click="fetchCSV"
+            :disabled="isDisabled"
+            v-bind:class="{'opacity-40': isDisabled}"
             class="border bg-green-800 text-white font-bold inline-flex items-center justify-center whitespace-nowrap rounded-e-md text-sm h-10 px-4 py-2"
           >
             Carregar
@@ -192,6 +205,8 @@ const downloadRA = () => {
             ></multiselect>
             <button
               @click="downloadRA"
+              :disabled="isDisabled"
+              v-bind:class="{'opacity-40': isDisabled}"
               class="border bg-green-800 text-white font-bold inline-flex items-center justify-center whitespace-nowrap rounded-e-md text-sm h-10 px-4 py-2"
             >
               Baixar RAs
@@ -200,6 +215,7 @@ const downloadRA = () => {
 
           <div class="relative w-full overflow-auto">
             <vue-good-table
+              v-bind:class="{'opacity-40': isDisabled}"
               :columns="columns"
               :rows="rows"
               :pagination-options="{
@@ -219,6 +235,28 @@ const downloadRA = () => {
               v-on:search="onSearch"
             >
             </vue-good-table>
+            <div
+              v-if="isDisabled"
+              role="status"
+              class="absolute -translate-x-1/2 -translate-y-1/2 top-2/4 left-1/2"
+            >
+              <svg
+                aria-hidden="true"
+                class="w-8 h-8 text-gray-200 animate-spin dark:text-gray-400 fill-gray-800"
+                viewBox="0 0 100 101"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                  fill="currentColor"
+                />
+                <path
+                  d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                  fill="currentFill"
+                />
+              </svg>
+            </div>
           </div>
         </div>
       </main>
