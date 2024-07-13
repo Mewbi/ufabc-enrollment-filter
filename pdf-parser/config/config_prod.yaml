@@ -1,0 +1,15 @@
+name: "UFABC - PDF Parser"
+debug: false
+
+server:
+  host: "0.0.0.0"
+  port: 8080
+  with_cors: true
+  cors_host: "https://mewbi.github.io"
+
+database:
+  type: "file:"
+  address: "database.db"
+  cache: "shared"
+  max_conn: 20
+  schema: "database/schema.sql" 

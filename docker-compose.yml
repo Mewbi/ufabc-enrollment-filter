@@ -1,0 +1,10 @@
+version: '3'
+
+services:
+  ufabc-enrollment-api:
+    build:
+      ./pdf-parser/
+    container_name: ufabc_enrollment_api
+    restart: always
+    ports:
+      - "8100:8080"

@@ -1,0 +1,15 @@
+name: "UFABC - PDF Parser"
+debug: true
+
+server:
+  host: "localhost"
+  port: 8080
+  with_cors: true
+  cors_host: "localhost:5173"
+
+database:
+  type: "file:"
+  address: "database.db"
+  cache: "shared"
+  max_conn: 20
+  schema: "database/schema.sql" 
