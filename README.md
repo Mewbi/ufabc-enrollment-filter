@@ -52,7 +52,7 @@ Every new CSV must be moved to [public](./enrollment-filter/public/) directory a
 
 ## 📄 [PDF Parser](./pdf-parser/)
 
-The Go program downloads a PDF from a URL provided via the command line, parses table content from the PDF, and saves it as a CSV file. The table in the PDF should contain the columns "RA", "Código turma", and "Nome Disciplina" as the following [example](https://prograd.ufabc.edu.br/pdf/ajuste_2024_2_matriculas_deferidas.pdf):
+The Go program downloads a PDF from a URL provided via the command line or via an endpoint API, parses table content from the PDF, and saves it as a CSV file or in a SQLite database. The table in the PDF should contain the columns "RA", "Código turma", and "Nome Disciplina" as the following [example](https://prograd.ufabc.edu.br/pdf/ajuste_2024_2_matriculas_deferidas.pdf):
 
 <p align="center">
     <img src="./assets/example-pdf.png" height="300">
@@ -62,17 +62,36 @@ The Go program downloads a PDF from a URL provided via the command line, parses 
 
 Before running the program, ensure you have Go installed on your system. You can download and install Go from [the official website](https://go.dev/doc/install).
 
-### 🚀 Usage
+### 🚀 Usage CLI
 
-1. In your terminal navigate to the directory containing the script.
-
-2. Run the script with the URL of the PDF as a command-line argument:
+1. In your terminal navigate to the directory.
 
    ```sh
-   go run main.go http://example.com/yourfile.pdf
+   cd pdf-parser/
+   ```
+
+2. Run the program with the URL of the PDF as a command-line argument:
+
+   ```sh
+   go run cmd/cli/main.go http://example.com/yourfile.pdf
    ```
 
    Replace `http://example.com/yourfile.pdf` with the actual URL of the PDF you want to process.
+
+### 🚀 Usage API
+
+1. In your terminal navigate to the directory.
+
+   ```sh
+   cd pdf-parser/
+   ```
+
+2. Start the API server with the following command:
+
+   ```sh
+   go run cmd/server/main.go
+   ```
+
 
 ### 📂 Output
 
