@@ -14,7 +14,7 @@ RUN apk add --no-cache gcc musl-dev
 COPY . .
 
 # Build the Go app
-RUN go mod download && go build -o main .
+RUN go mod download && go build -o main ./cmd/server/
 
 # Start a new stage from scratch
 FROM alpine:latest
@@ -27,7 +27,7 @@ COPY --from=builder /app/main .
 COPY --from=builder /app/config/config_prod.yaml ./config/config.yaml
 COPY --from=builder /app/database ./database
 
-EXPOSE 42069
+EXPOSE 8080
 
 # Command to run the executable
 CMD ["./main"]
