@@ -5,8 +5,11 @@ import { saveAs } from "file-saver";
 import "vue-good-table-next/dist/vue-good-table-next.css";
 import { VueGoodTable } from "vue-good-table-next";
 import { ref, onMounted, computed, watch } from "vue";
-import LoadingIcon from '../components/icons/LoadingIcon.vue';
+import LoadingIcon from "../components/icons/LoadingIcon.vue";
 import FooterComponent from "../components/core/FooterComponent.vue";
+import ModalComponent from "../components/core/ModalComponent.vue";
+import { openModal, container } from "jenesius-vue-modal";
+import api from "../services/api";
 
 interface Column {
   label: string;
@@ -44,35 +47,34 @@ const columns = ref<Column[]>([
   },
 ]);
 
-const onFileLoaded = (results: Papa.ParseResult<Row>) => {
-  rows.value = results.data;
-  isDisabled.value = false;
-};
+const fileOptions = ref<Map<string, string>>();
 
-const fetchCSV = async () => {
-  isDisabled.value = true;
-  try {
-    const baseURL = `/ufabc-enrollment-filter/`;
-    const response = await fetch(`${baseURL}${file.value}`);
-    const csv = await response.text();
-    Papa.parse(csv, {
-      header: true,
-      transformHeader: (_: string, index: number) => {
-        return columns.value[index].field;
-      },
-      complete: onFileLoaded,
-    });
-  } catch (error) {
-    console.error("Failed to fetch CSV:", error);
+const file = ref<string>();
+const apiStatus = ref<boolean>(false);
+
+const getApiStatus = async () => {
+  apiStatus.value = await api.getApiStatus();
+
+  if (apiStatus.value) {
+    const res = await api.getEnrollmentList();
+
+    if (api.isErrorResponse(res)) {
+      if ("error" in res) {
+        if ("message" in res && res.message) console.log(res.message);
+      }
+      return;
+    }
+
+    fileOptions.value = new Map<string, string>(
+      res.map((enrollment) => [enrollment.name, enrollment.id])
+    );
+
+    // Set the first item of options as default value
+    file.value = fileOptions.value.entries().next().value[1];
+    return;
   }
-};
 
-onMounted(() => {
-  fetchCSV();
-});
-
-const fileOptions = ref<Map<string, string>>(
-  new Map<string, string>([
+  fileOptions.value = new Map<string, string>([
     [
       "Matrículas Deferidas Pós Reajuste 2024.2",
       "reajuste_2024_2_matriculas_deferidas.csv",
@@ -81,11 +83,59 @@ const fileOptions = ref<Map<string, string>>(
       "Matrículas Deferidas Pós Ajuste 2024.2",
       "ajuste_2024_2_matriculas_deferidas.csv",
     ],
-  ])
-);
+  ]);
 
-// Set the first item of options as default value
-const file = ref<string>(fileOptions.value.entries().next().value[1]);
+  // Set the first item of options as default value
+  file.value = fileOptions.value.entries().next().value[1];
+};
+
+const onFileLoaded = (results: Papa.ParseResult<Row>) => {
+  rows.value = results.data;
+  isDisabled.value = false;
+};
+
+const fetchCSV = async () => {
+  isDisabled.value = true;
+
+  if (apiStatus.value) {
+
+    const response = await api.getEnrollment(`${file.value}`) 
+    if (api.isErrorResponse(response)) {
+      if ("error" in response) {
+        if ("message" in response && response.message) 
+          console.log(response.message);
+      }
+      return;
+    }
+
+    parseCSV(response);
+    return;
+  }
+
+  try {
+    const baseURL = `/ufabc-enrollment-filter/`;
+    const response = await fetch(`${baseURL}${file.value}`);
+    const csv = await response.text();
+    parseCSV(csv);
+  } catch (error) {
+    console.error("Failed to fetch CSV:", error);
+  }
+};
+
+const parseCSV = (csv: string) => {
+  Papa.parse(csv, {
+      header: true,
+      transformHeader: (_: string, index: number) => {
+        return columns.value[index].field;
+      },
+      complete: onFileLoaded,
+    });
+}
+
+onMounted(async () => {
+  await getApiStatus();
+  fetchCSV();
+});
 
 const searchValue = ref<Class>();
 const searchValueCode = computed(() => {
@@ -93,20 +143,18 @@ const searchValueCode = computed(() => {
 });
 
 const searchOptions = computed(() => {
-  const optionsMap =  rows.value.reduce<Map<string, Class>>((map, row) => {
-    if (!map.has(row.code))
-      map.set(row.code, { code: row.code, name: row.name } satisfies Class)
+  const optionsMap = rows.value.reduce<Map<string, Class>>((map, row) => {
+    if (!map.has(row.code) && row.code !== undefined)
+      map.set(row.code, { code: row.code, name: row.name } satisfies Class);
     return map;
-  }, new Map<string, Class>([
-    ['', {code: '', name: 'Limpar busca'} satisfies Class]]
-  ));
+  }, new Map<string, Class>([["", { code: "", name: "Limpar busca" } satisfies Class]]));
 
-  const options = Array.from(optionsMap.values())
-  return options
+  const options = Array.from(optionsMap.values());
+  return options;
 });
 
 const searchLabel = ({ code, name }: Class) => {
-  if (code !== undefined && code.length === 0) return `${name}` // Show 'Limpar' label
+  if (code !== undefined && code.length === 0) return `${name}`; // Show 'Limpar' label
   return `${code} - ${name}`;
 };
 
@@ -134,7 +182,7 @@ const search = (row: Row, _: Column, __: string, searchTerm: string) => {
 
 const onSearch = (params: { searchTerm: string; rowCount: number }) => {
   if (params.searchTerm.length === 0) {
-    searchValue.value = undefined // Clear input
+    searchValue.value = undefined; // Clear input
   }
   auxFiltered = true;
 };
@@ -150,6 +198,13 @@ const downloadRA = () => {
 };
 
 const isDisabled = ref<boolean>(false);
+
+const showModal = () => {
+  openModal(ModalComponent, {
+    apiStatus: apiStatus,
+    fileOptions: fileOptions,
+  });
+};
 </script>
 
 <template>
@@ -171,7 +226,9 @@ const isDisabled = ref<boolean>(false);
         </div>
 
         <div class="flex items-center ml-auto">
-          <label class="ps-4 p-2.5 h-10 rounded-s-md font-bold text-sm bg-gray-200">
+          <label
+            class="ps-4 p-2.5 h-10 rounded-s-md font-bold text-sm bg-gray-200"
+          >
             Arquivo
           </label>
           <select
@@ -189,15 +246,24 @@ const isDisabled = ref<boolean>(false);
           <button
             @click="fetchCSV"
             :disabled="isDisabled"
-            v-bind:class="{'opacity-40': isDisabled}"
-            class="border bg-green-800 text-white font-bold inline-flex items-center justify-center whitespace-nowrap rounded-e-md text-sm h-10 px-4 py-2"
+            v-bind:class="{ 'opacity-40': isDisabled }"
+            class="bg-green-600 text-white font-bold inline-flex items-center justify-center whitespace-nowrap text-sm h-10 px-4 py-2"
           >
             Carregar
+          </button>
+          <button
+            @click="showModal"
+            :disabled="isDisabled"
+            v-bind:class="{ 'opacity-40': isDisabled }"
+            class="bg-green-800 text-white font-bold inline-flex items-center justify-center whitespace-nowrap rounded-e-md text-sm h-10 px-4 py-2"
+          >
+            Novo Arquivo
           </button>
         </div>
       </header>
 
       <main class="flex p-4 md:p-6">
+        <container class="z-50" />
         <div class="rounded-md w-full">
           <div class="flex items-center ml-auto mb-3">
             <label
@@ -207,7 +273,7 @@ const isDisabled = ref<boolean>(false);
             </label>
             <multiselect
               v-model="searchValue"
-              class="multiselect text-clip bg-inherit w-full text-sm border h-10 p-2.5 z-50 bg-white text-gray-600"
+              class="multiselect text-clip bg-inherit w-full text-sm border h-10 p-2.5 z-30 bg-white text-gray-600"
               :options="searchOptions"
               :custom-label="searchLabel"
               placeholder="Pesquise por uma turma"
@@ -215,7 +281,7 @@ const isDisabled = ref<boolean>(false);
             <button
               @click="downloadRA"
               :disabled="isDisabled"
-              v-bind:class="{'opacity-40': isDisabled}"
+              v-bind:class="{ 'opacity-40': isDisabled }"
               class="border bg-green-800 text-white font-bold inline-flex items-center justify-center whitespace-nowrap rounded-e-md text-sm h-10 px-4 py-2"
             >
               Baixar RAs
@@ -224,7 +290,7 @@ const isDisabled = ref<boolean>(false);
 
           <div class="relative w-full overflow-auto">
             <vue-good-table
-              v-bind:class="{'opacity-40': isDisabled}"
+              v-bind:class="{ 'opacity-40': isDisabled }"
               :columns="columns"
               :rows="rows"
               :pagination-options="{
