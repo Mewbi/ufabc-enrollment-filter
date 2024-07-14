@@ -41,7 +41,7 @@ const isDisabled = ref<boolean>();
 
 <template>
   <div
-    class="flex rounded modal-window bg-white h-2/4 w-full max-w-xl justify-center items-center"
+    class="flex rounded modal-window bg-white h-2/4 min-h-[450px] w-full max-w-xl justify-center items-center"
   >
     <div
       class="flex flex-col justify-between space-y-5 items-center w-full"
