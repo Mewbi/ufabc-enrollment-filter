@@ -31,7 +31,7 @@ type InputEnrollment struct {
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		config := config.Get()
-		c.Header("Access-Control-Allow-Origin", fmt.Sprintf("http://%s:5173", config.Server.Host))
+		c.Header("Access-Control-Allow-Origin", config.Server.CorsHost)
 		c.Header("Access-Control-Allow-Credentials", "true")
 		c.Header(
 			"Access-Control-Allow-Headers",
