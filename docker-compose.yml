@@ -5,6 +5,9 @@ services:
     build:
       ./pdf-parser/
     container_name: ufabc_enrollment_api
+    volumes:
+        - ./docs:/app/docs/
+        - ./pdf-parser/database.db:/app/database.db
     restart: always
     ports:
       - "8100:8080"

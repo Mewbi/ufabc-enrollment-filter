@@ -148,6 +148,12 @@ func (c *controller) Start() {
 		router.Use(CORSMiddleware())
 	}
 
+	router.GET("/", func(c *gin.Context) {
+		c.Request.URL.Path = "/ufabc-enrollment-filter"
+		router.HandleContext(c)
+	})
+	router.Static("/ufabc-enrollment-filter", config.Server.StaticPath)
+
 	router.GET("/health", c.health)
 	router.POST("/parse-enrollment", c.parseEnrollment)
 	router.GET("/enrollment/:id", c.getEnrollment)

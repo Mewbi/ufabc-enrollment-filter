@@ -14,10 +14,11 @@ type Config struct {
 }
 
 type Server struct {
-	Host     string `yaml:"host"`
-	CorsHost string `yaml:"cors_host"`
-	WithCors bool   `yaml:"with_cors"`
-	Port     int    `yaml:"port"`
+	Host       string `yaml:"host"`
+	CorsHost   string `yaml:"cors_host"`
+	WithCors   bool   `yaml:"with_cors"`
+	Port       int    `yaml:"port"`
+	StaticPath string `yaml:"static_path"`
 }
 
 type Database struct {
