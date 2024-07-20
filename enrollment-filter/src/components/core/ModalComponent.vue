@@ -6,6 +6,7 @@ import { closeModal } from "jenesius-vue-modal";
 import { getDocument } from "pdfjs-dist";
 import * as pdfjs from "pdfjs-dist";
 
+// @ts-ignore: import error
 import PdfjsWorker from "pdfjs-dist/build/pdf.worker";
 import { TextItem } from "pdfjs-dist/types/src/display/api";
 
@@ -24,38 +25,47 @@ const props = defineProps({
     type: Map,
     required: true,
   },
+  localFiles: {
+    type: Map,
+    required: true,
+  },
 });
 
 const newEnrollment = async () => {
-  isDisabled.value = true;
+  isDisabledModal.value = true;
 
   if (props.apiStatus) {
     getFromApi();
     return;
   }
 
-  getFromPDF();
+  await getFromPDF();
+  isDisabledModal.value = false;
+  closeModal();
 };
 
 const getFromPDF = async () => {
   if (pdfFile.value === undefined) {
     alert("Faça o upload de um arquivo PDF válido.");
-    isDisabled.value = false;
+    isDisabledModal.value = false;
 
     return;
   }
 
   if (name.value === undefined || name.value.length === 0) {
     alert("Insira um nome válido.");
-    isDisabled.value = false;
+    isDisabledModal.value = false;
     return;
   }
 
   const buffer = await pdfFile.value.arrayBuffer();
-  console.log(buffer);
   const load = getDocument({ data: buffer });
   const regex = /([0-9]+)\s([A-Z0-9]+-[0-9]{2}(SA|SB))\s(.*)/;
-  const csvRows: string[][] = [];
+  const csvRows: string[][] = []; // I need use array because I cannot pass string as reference
+
+  props.localFiles.set(name.value, csvRows);
+  props.fileOptions.set(name.value, name.value);
+
   load.promise.then(
     (pdf) => {
       for (let i = 1; i <= pdf.numPages; i++) {
@@ -83,12 +93,6 @@ const getFromPDF = async () => {
           );
         });
       }
-      console.log("VAMO VER")
-      csvRows.forEach((line) => {
-        console.log("->", line);
-      });
-      isDisabled.value = false;
-      console.log("TERMINEI?")
     },
     (err) => {
       console.log(err);
@@ -98,8 +102,7 @@ const getFromPDF = async () => {
   const matchLineRegex = (line: string) => {
     const elements = line.match(regex);
     if (elements && elements.length >= 5) {
-      console.log(elements[1], elements[2], elements[4])
-      csvRows.push([elements[1], elements[2], elements[4]]);
+      csvRows.push([elements[1].toString(), elements[2].toString(), `"${elements[4].toString()}"`]);
     }
   };
 };
@@ -118,16 +121,16 @@ const getFromApi = async () => {
     if ("error" in response) {
       if ("message" in response && response.message) alert(response.message);
     }
-    isDisabled.value = false;
+    isDisabledModal.value = false;
     return;
   }
 
   props.fileOptions.set(response.name, response.id);
-  isDisabled.value = false;
+  isDisabledModal.value = false;
   closeModal();
 };
 
-const isDisabled = ref<boolean>();
+const isDisabledModal = ref<boolean>(false);
 </script>
 
 <template>
@@ -136,12 +139,15 @@ const isDisabled = ref<boolean>();
   >
     <div
       class="flex flex-col justify-between space-y-5 items-center w-full"
-      v-bind:class="{ 'opacity-40': isDisabled }"
+      v-bind:class="{ 'opacity-40': isDisabledModal }"
     >
       <div class="space-y-2 pl-5 pr-5">
         <p class="font-bold text-lg">Upload novo Arquivo</p>
       </div>
-      <div class="space-y-2 pl-5 pr-5">
+      <div
+        class="space-y-2 pl-5 pr-5"
+        v-bind:class="{ 'space-y-5': !props.apiStatus }"
+      >
         <p v-if="props.apiStatus">
           Faça o upload de um novo arquivo PDF informando o nome do arquivo e
           sua respectiva URL.
@@ -160,9 +166,13 @@ const isDisabled = ref<boolean>();
           >
           para visualizar o formato do arquivo esperado.
         </p>
-        <p>
+        <p v-if="props.apiStatus">
           Uma vez feito o upload não será possível alterar o nome informado.
           Escolha um bom nome =)
+        </p>
+        <p v-else>
+          Caso a página seja recarregada será necessário refazer o upload do
+          arquivo.
         </p>
         <p v-if="props.apiStatus">
           São aceitos apenas links do subdomínio <b>prograd.ufabc.edu.br</b>.
@@ -176,7 +186,7 @@ const isDisabled = ref<boolean>();
             ><b>Nome</b></label
           >
           <input
-            :disabled="isDisabled"
+            :disabled="isDisabledModal"
             type="text"
             v-model="name"
             placeholder="Matrículas Deferidas Pós Reajuste 2024.2"
@@ -190,7 +200,7 @@ const isDisabled = ref<boolean>();
             ><b>URL</b></label
           >
           <input
-            :disabled="isDisabled"
+            :disabled="isDisabledModal"
             type="text"
             v-model="url"
             placeholder="https://prograd.ufabc.edu.br/pdf/ajuste_2024_2_matriculas_deferidas.pdf"
@@ -203,7 +213,7 @@ const isDisabled = ref<boolean>();
             ><b>Arquivo</b></label
           >
           <input
-            :disabled="isDisabled"
+            :disabled="isDisabledModal"
             type="file"
             @change="onFileChange"
             class="border ps-3 text-sm rounded-e-md w-full p-1.5 t-bold"
@@ -212,7 +222,7 @@ const isDisabled = ref<boolean>();
       </div>
       <div>
         <button
-          :disabled="isDisabled"
+          :disabled="isDisabledModal"
           class="border bg-green-800 text-white font-bold inline-flex items-center justify-center whitespace-nowrap rounded text-sm h-10 px-4 py-2"
           @click="newEnrollment"
         >
@@ -220,7 +230,7 @@ const isDisabled = ref<boolean>();
         </button>
       </div>
       <div
-        v-if="isDisabled"
+        v-if="isDisabledModal"
         role="status"
         class="absolute -translate-x-1/2 -translate-y-1/2 top-2/4 left-1/2"
       >

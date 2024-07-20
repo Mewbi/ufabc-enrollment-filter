@@ -1,7 +1,7 @@
 <script setup lang="ts"></script>
 <template>
   <svg
-    class="w-5 h-5 text-gray-600 dark:text-gray-400"
+    class="w-5 h-5 text-gray-600"
     aria-hidden="true"
     xmlns="http://www.w3.org/2000/svg"
     fill="currentColor"

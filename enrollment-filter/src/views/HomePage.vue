@@ -47,7 +47,7 @@ const columns = ref<Column[]>([
   },
 ]);
 
-const fileOptions = ref<Map<string, string>>();
+const fileOptions = ref<Map<string, string>>(new Map<string, string>());
 
 const file = ref<string>();
 const apiStatus = ref<boolean>(false);
@@ -97,12 +97,12 @@ const onFileLoaded = (results: Papa.ParseResult<Row>) => {
 const fetchCSV = async () => {
   isDisabled.value = true;
 
+  // Get CSV from API
   if (apiStatus.value) {
-
-    const response = await api.getEnrollment(`${file.value}`) 
+    const response = await api.getEnrollment(`${file.value}`);
     if (api.isErrorResponse(response)) {
       if ("error" in response) {
-        if ("message" in response && response.message) 
+        if ("message" in response && response.message)
           console.log(response.message);
       }
       return;
@@ -112,6 +112,15 @@ const fetchCSV = async () => {
     return;
   }
 
+  // Get CSV from local upload
+  if (localFiles.value.get(`${file.value}`) !== undefined) {
+    const csvRows = localFiles.value.get(`${file.value}`) as string[][];
+    const csv = csvRows.map((row) => row.join(",")).join("\n");
+    parseCSV(csv);
+    return;
+  }
+
+  // Get CSV from github repository
   try {
     const baseURL = `/ufabc-enrollment-filter/`;
     const response = await fetch(`${baseURL}${file.value}`);
@@ -124,13 +133,13 @@ const fetchCSV = async () => {
 
 const parseCSV = (csv: string) => {
   Papa.parse(csv, {
-      header: true,
-      transformHeader: (_: string, index: number) => {
-        return columns.value[index].field;
-      },
-      complete: onFileLoaded,
-    });
-}
+    header: true,
+    transformHeader: (_: string, index: number) => {
+      return columns.value[index].field;
+    },
+    complete: onFileLoaded,
+  });
+};
 
 onMounted(async () => {
   await getApiStatus();
@@ -159,7 +168,7 @@ const searchLabel = ({ code, name }: Class) => {
 };
 
 const raFiltered = ref<string[][]>([]);
-let auxFiltered = false;
+let auxFiltered = true;
 
 watch(rows, () => {
   // If new csv was loaded, fill RAs
@@ -185,6 +194,7 @@ const onSearch = (params: { searchTerm: string; rowCount: number }) => {
     searchValue.value = undefined; // Clear input
   }
   auxFiltered = true;
+  console.log(raFiltered.value)
 };
 
 const downloadRA = () => {
@@ -198,11 +208,12 @@ const downloadRA = () => {
 };
 
 const isDisabled = ref<boolean>(false);
-
+const localFiles = ref<Map<string, string[][]>>(new Map<string, string[][]>());
 const showModal = () => {
   openModal(ModalComponent, {
     apiStatus: apiStatus,
     fileOptions: fileOptions,
+    localFiles: localFiles,
   });
 };
 </script>
