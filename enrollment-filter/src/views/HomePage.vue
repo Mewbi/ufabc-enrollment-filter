@@ -94,8 +94,13 @@ const onFileLoaded = (results: Papa.ParseResult<Row>) => {
   isDisabled.value = false;
 };
 
+const sleep = (ms: number) => {return new Promise( resolve => setTimeout(resolve, ms) )}
+
 const fetchCSV = async () => {
   isDisabled.value = true;
+
+  // Ensure disable gonna run
+  await sleep(1)
 
   // Get CSV from API
   if (apiStatus.value) {
@@ -194,7 +199,7 @@ const onSearch = (params: { searchTerm: string; rowCount: number }) => {
     searchValue.value = undefined; // Clear input
   }
   auxFiltered = true;
-  console.log(raFiltered.value)
+  //console.log(raFiltered.value)
 };
 
 const downloadRA = () => {
